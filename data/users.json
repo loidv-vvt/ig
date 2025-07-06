@@ -12,5 +12,19 @@
     "password": "Loikthp123",
     "createdAt": "2025-07-06T00:40:04.175Z",
     "status": "pending"
+  },
+  {
+    "email": "Loid2aik@gmail.com",
+    "username": "123456Az",
+    "password": "123456Az",
+    "createdAt": "2025-07-06T03:18:03.489Z",
+    "status": "pending"
+  },
+  {
+    "email": "Loid3aik@gmail.com",
+    "username": "123456",
+    "password": "123456A",
+    "createdAt": "2025-07-06T03:21:52.259Z",
+    "status": "pending"
   }
 ]
