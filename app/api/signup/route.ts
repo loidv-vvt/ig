@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create data directory if it doesn't exist
-    const dataDir = path.join(process.cwd(), "data");
+    const dataDir = path.join("/tmp", "data");
     if (!existsSync(dataDir)) {
       await mkdir(dataDir, { recursive: true });
     }
