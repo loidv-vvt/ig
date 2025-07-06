@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, readFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-
-interface SignupData {
-  email: string;
-  username: string;
-  password: string;
-  createdAt: string;
-  status: "pending" | "approved" | "rejected";
-}
+import clientPromise from "@/lib/mongodb";
+import { User } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log(request);
     const { email, username, password } = await request.json();
 
     // Validate input
@@ -48,33 +38,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create data directory if it doesn't exist
-    const dataDir = path.join("/tmp", "data");
-    if (!existsSync(dataDir)) {
-      await mkdir(dataDir, { recursive: true });
-    }
-
-    const filePath = path.join(dataDir, "users.json");
-
-    // Read existing users or create empty array
-    let users: SignupData[] = [];
-    try {
-      if (existsSync(filePath)) {
-        const fileContent = await readFile(filePath, "utf-8");
-        users = JSON.parse(fileContent);
-      }
-    } catch (error) {
-      console.error("Error reading users file:", error);
-      users = [];
-    }
+    // Connect to MongoDB
+    const client = await clientPromise;
+    const db = client.db("user-management"); // Tên database
+    const collection = db.collection("users");
 
     // Check if email or username already exists
-    const existingEmail = users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
-    );
-    const existingUsername = users.find(
-      (user) => user.username.toLowerCase() === username.toLowerCase()
-    );
+    const existingEmail = await collection.findOne({
+      email: { $regex: new RegExp(`^${email}$`, "i") },
+    });
+
+    const existingUsername = await collection.findOne({
+      username: { $regex: new RegExp(`^${username}$`, "i") },
+    });
 
     if (existingEmail) {
       return NextResponse.json(
@@ -91,26 +67,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
-    const newUser: SignupData = {
-      email,
-      username,
+    const newUser: User = {
+      email: email.toLowerCase(),
+      username: username.toLowerCase(),
       password, // In production, you should hash this password
       createdAt: new Date().toISOString(),
       status: "pending",
     };
 
-    // Add to users array
-    users.push(newUser);
-
-    // Save to file
-    await writeFile(filePath, JSON.stringify(users, null, 2));
+    // Insert user into database
+    const result = await collection.insertOne(newUser);
 
     // Return success response (don't include password in response)
     const { password: _, ...userResponse } = newUser;
+    const responseUser = {
+      ...userResponse,
+      _id: result.insertedId.toString(),
+    };
 
     return NextResponse.json({
       message: "Đăng ký thành công",
-      user: userResponse,
+      user: responseUser,
     });
   } catch (error) {
     console.error("Signup error:", error);
