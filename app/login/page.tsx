@@ -87,7 +87,7 @@ export default function SignupPage() {
 
       if (response.ok) {
         setIsSuccess(true);
-        setFormData({ email: "", username: "", password: "" });
+        setFormData({ email: "", password: "" });
       } else {
         setErrors({ email: result.error || "Đã xảy ra lỗi, vui lòng thử lại" });
       }
